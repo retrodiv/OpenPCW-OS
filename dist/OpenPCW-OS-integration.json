@@ -1,0 +1,7 @@
+{
+  "disk_sha256": "1b4e8ff0423989349075332b7fd7020c26c2bbd83743ca058f1de559423fa15a",
+  "schema": 1,
+  "shell_ready_pc": 62235,
+  "shell_ready_symbol": "resident_shell_entry",
+  "system": "OpenPCW-OS"
+}

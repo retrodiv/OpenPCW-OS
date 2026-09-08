@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "status": "active",
+  "references": {
+    "processor": [
+      "REF-Z80-UM0080"
+    ],
+    "pcw_hardware": [
+      "REF-PCW-HARDWARE",
+      "REF-PCW-IO",
+      "REF-PCW-SOFTWARE-IO"
+    ],
+    "pcw_boot": [
+      "REF-PCW-BOOT"
+    ],
+    "pcw_xbios": [
+      "REF-PCW-XBIOS",
+      "REF-PCW-XBIOS-ARCH"
+    ],
+    "cpm_application": [
+      "REF-CPM3-PG",
+      "REF-CPM3-DISK"
+    ],
+    "disk_container": [
+      "REF-EXTDSK"
+    ],
+    "font": [
+      "REF-MSDOS-FONT"
+    ]
+  },
+  "validations": {
+    "VAL-BUILD-LAYOUT": "python3 tools/build.py --check",
+    "VAL-PROJECT": "python3 tests/check_project.py",
+    "VAL-SOURCE-MANIFEST": "python3 tools/source_manifest.py --check",
+    "VAL-ARTIFACT-CONTRACTS": "python3 tests/test_artifact_contracts.py",
+    "VAL-GUEST-FIXTURES": "python3 tests/test_fixture_assembly.py",
+    "VAL-REPRODUCIBLE": "python3 tests/test_reproducible.py",
+    "VAL-COMMENT-INVARIANCE": "python3 tests/test_comment_invariance.py",
+    "VAL-TRACEABILITY": "python3 tools/check_traceability.py",
+    "VAL-NATIVE-WBOOT": "tests/fixtures/openpcw_cpm_plus_wboot_probe.asm through python3 tests/integration_mame.py and python3 tests/integration_joyce.py",
+    "VAL-TRANSIENT-STACK": "tests/fixtures/openpcw_cpm_plus_transient_stack_probe.asm through python3 tests/integration_mame.py",
+    "VAL-MAME-NATIVE": "python3 tests/integration_mame.py",
+    "VAL-XBIOS-ACTIVE-SPEC": "tests/fixtures/openpcw_cpm_plus_xbios_active_spec_probe.asm through python3 tests/integration_mame.py",
+    "VAL-GENCOM-LOADER-BOUNDARY": "tests/fixtures/openpcw_cpm_plus_gencom_loader_probe.asm through python3 tests/integration_mame.py",
+    "VAL-SCR-RUN-RSX": "tests/fixtures/openpcw_cpm_plus_screen_rsx_probe.asm and tests/fixtures/openpcw_cpm_plus_screen_rsx_module.asm through python3 tests/integration_mame.py",
+    "VAL-JOYCE-NATIVE": "python3 tests/integration_joyce.py",
+    "VAL-ENTRY-STATE": "python3 tests/test_entry_state.py; tests/fixtures/openpcw_cpm_plus_entry_state_probe.asm through python3 tests/integration_mame.py",
+    "VAL-PUBLICATION": "python3 tests/test_publication.py"
+  },
+  "components": [
+    {
+      "id": "BOOT",
+      "provenance_status": "documented",
+      "provenance_record": "docs/DESIGN_PROVENANCE.md",
+      "status": "documented",
+      "files": [
+        "src/boot.asm",
+        "src/boot_stage2.asm"
+      ],
+      "symbol_patterns": [
+        ".*"
+      ],
+      "designs": [
+        "DES-BOOT-001",
+        "DES-BOOT-002",
+        "DES-MEM-001"
+      ],
+      "references": [
+        "REF-PCW-BOOT",
+        "REF-PCW-IO"
+      ],
+      "validations": [
+        "VAL-BUILD-LAYOUT",
+        "VAL-ARTIFACT-CONTRACTS"
+      ],
+      "contract": {
+        "inputs": "PCW bootstrap state and physical system sectors",
+        "outputs": "mapped resident and native modules with their documented entry selected",
+        "registers": "private boot context; routines publish only their explicit transfer result",
+        "state": "FDC command state, paging ports, motor state, and boot progress",
+        "memory": "F000h boot sector, B000h stage two, protected blocks 3, 7, and 8"
+      }
+    },
+    {
+      "id": "RESIDENT",
+      "provenance_status": "documented",
+      "provenance_record": "docs/DESIGN_PROVENANCE.md",
+      "status": "documented",
+      "files": [
+        "src/kernel.asm"
+      ],
+      "symbol_patterns": [
+        ".*"
+      ],
+      "designs": [
+        "DES-KERNEL-001",
+        "DES-BDOS-001",
+        "DES-SHELL-001",
+        "DES-IRQ-001",
+        "DES-ENTRY-001"
+      ],
+      "references": [
+        "REF-CPM3-PG",
+        "REF-Z80-UM0080",
+        "REF-PCW-IO"
+      ],
+      "validations": [
+        "VAL-BUILD-LAYOUT",
+        "VAL-NATIVE-WBOOT",
+        "VAL-TRANSIENT-STACK",
+        "VAL-GENCOM-LOADER-BOUNDARY",
+        "VAL-SCR-RUN-RSX",
+        "VAL-GUEST-FIXTURES",
+        "VAL-ENTRY-STATE"
+      ],
+      "contract": {
+        "inputs": "CP/M Page Zero, BDOS/BIOS register calls, or resident-shell command state",
+        "outputs": "CP/M-compatible return registers or transfer to the selected command",
+        "registers": "public calls follow the documented ABI; internal helpers treat AF, BC, DE, and HL as working unless their local comment preserves them",
+        "state": "resident shell, SCB, bank mapping, interrupt chain, and native-service bridge",
+        "memory": "attached modules below F000h, cold source at F200h-F2FFh, and lifecycle/persistent common regions from F300h through FFFFh, all with build-checked ABI islands"
+      }
+    },
+    {
+      "id": "NATIVE_TERMINAL",
+      "provenance_status": "documented",
+      "provenance_record": "docs/DESIGN_PROVENANCE.md",
+      "status": "documented",
+      "files": [
+        "src/native_kernel.asm"
+      ],
+      "symbol_patterns": [
+        "terminal_.*",
+        "native_dir_.*",
+        "native_putc.*",
+        "screen_.*",
+        "cursor_.*"
+      ],
+      "designs": [
+        "DES-TERM-001",
+        "DES-TERM-002",
+        "DES-DIR-001",
+        "DES-FONT-001"
+      ],
+      "references": [
+        "REF-PCW-HARDWARE",
+        "REF-PCW-IO",
+        "REF-PCW-XBIOS"
+      ],
+      "validations": [
+        "VAL-SCR-RUN-RSX",
+        "VAL-JOYCE-NATIVE"
+      ],
+      "contract": {
+        "inputs": "character stream, cursor coordinates, terminal parameters, or directory row data",
+        "outputs": "updated PCW bitmap/roller state and documented console result",
+        "registers": "internal helpers use AF, BC, DE, and HL; public veneers preserve the registers stated by their ABI comments",
+        "state": "terminal parser, cursor overlay, roller RAM, font bitmap, and directory presentation state",
+        "memory": "public PCW screen bitmap from 5C00h plus native private terminal state"
+      }
+    },
+    {
+      "id": "NATIVE_DISK",
+      "provenance_status": "documented",
+      "provenance_record": "docs/DESIGN_PROVENANCE.md",
+      "status": "documented",
+      "files": [
+        "src/native_kernel.asm"
+      ],
+      "symbol_patterns": [
+        "fdc_.*",
+        "native_disk_.*",
+        "disk_.*",
+        "native_xbios_.*",
+        "native_userf_.*",
+        "xbios_.*"
+      ],
+      "designs": [
+        "DES-DISK-001",
+        "DES-FS-A-001",
+        "DES-XBIOS-001",
+        "DES-ERROR-001"
+      ],
+      "references": [
+        "REF-PCW-HARDWARE",
+        "REF-PCW-XBIOS",
+        "REF-CPM3-PG"
+      ],
+      "validations": [
+        "VAL-MAME-NATIVE",
+        "VAL-XBIOS-ACTIVE-SPEC"
+      ],
+      "contract": {
+        "inputs": "BIOS/XBIOS registers, selected drive geometry, DMA address, and controller request",
+        "outputs": "controller status and CP/M-compatible success or error values",
+        "registers": "controller helpers use AF, BC, DE, and HL; public veneers implement their documented preservation rules",
+        "state": "uPD765 command/result phases, motor timer, DMA transfer, disk parameters, and selected error mode",
+        "memory": "common DMA window, disk-parameter staging, and protected native runtime page"
+      }
+    },
+    {
+      "id": "NATIVE_FILESYSTEM",
+      "provenance_status": "documented",
+      "provenance_record": "docs/DESIGN_PROVENANCE.md",
+      "status": "documented",
+      "files": [
+        "src/native_kernel.asm"
+      ],
+      "symbol_patterns": [
+        "native_bdos_.*",
+        "native_search_.*",
+        "native_fcb_.*",
+        "native_m_.*",
+        "ram_.*",
+        "sparse_.*",
+        "physical_.*"
+      ],
+      "designs": [
+        "DES-BDOS-003",
+        "DES-BDOS-004",
+        "DES-FS-A-001",
+        "DES-FS-M-001"
+      ],
+      "references": [
+        "REF-CPM3-PG",
+        "REF-CPM3-DISK"
+      ],
+      "validations": [
+        "VAL-GENCOM-LOADER-BOUNDARY"
+      ],
+      "contract": {
+        "inputs": "BDOS function registers, caller FCB/DMA, active user, and selected drive",
+        "outputs": "updated FCB/DMA plus CP/M-compatible A, H, and extended-result values",
+        "registers": "dispatcher-facing routines publish their documented result; private helpers use primary registers as working state",
+        "state": "A: extent cache, M: record map, allocation maps, passwords, labels, timestamps, and search cursor",
+        "memory": "caller bank through bounded mapping windows plus protected metadata and overlay regions"
+      }
+    },
+    {
+      "id": "NATIVE_GENERAL",
+      "provenance_status": "documented",
+      "provenance_record": "docs/DESIGN_PROVENANCE.md",
+      "status": "documented",
+      "files": [
+        "src/native_kernel.asm"
+      ],
+      "symbol_patterns": [
+        ".*"
+      ],
+      "designs": [
+        "DES-NATIVE-001",
+        "DES-MEM-001",
+        "DES-LINK-001",
+        "DES-LINK-002"
+      ],
+      "references": [
+        "REF-Z80-UM0080",
+        "REF-PCW-HARDWARE",
+        "REF-CPM3-PG"
+      ],
+      "validations": [
+        "VAL-BUILD-LAYOUT",
+        "VAL-MAME-NATIVE",
+        "VAL-SCR-RUN-RSX",
+        "VAL-JOYCE-NATIVE"
+      ],
+      "contract": {
+        "inputs": "native dispatch registers or internal service state identified by the symbol and its caller",
+        "outputs": "the ABI result named by the routine or updated internal service state",
+        "registers": "internal routines use AF, BC, DE, and HL unless the local contract states preservation; public entries follow PUBLIC_ABI.md",
+        "state": "native runtime, paging, keyboard, clock, shell, and compatibility-service state",
+        "memory": "native executable page, protected block 8, common ABI islands, and explicitly mapped caller pages"
+      }
+    }
+  ]
+}

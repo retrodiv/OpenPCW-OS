@@ -1,0 +1,61 @@
+name: Build and verify
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.14']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Pasmo
+        run: sudo apt-get update && sudo apt-get install --yes pasmo
+      - name: Verify the published files without rewriting them
+        run: make check
+      - name: Rebuild from a clean tree and verify again
+        run: make clean && make dist && make check
+
+  mame:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install native integration dependencies
+        run: sudo apt-get update && sudo apt-get install --yes pasmo mame
+      - name: Verify the release artifacts
+        run: make check
+      - name: Run native MAME probes
+        run: python3 tests/integration_mame.py --required
+
+  artifacts:
+    needs: [check, mame]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: OpenPCW-OS-distribution
+          path: |
+            dist/OpenPCW-OS.zip
+            dist/SHA256SUMS
+          if-no-files-found: error

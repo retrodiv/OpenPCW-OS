@@ -1,0 +1,6 @@
+# Keep source-manifest bytes identical on every checkout, including Windows.
+* text=auto eol=lf
+*.dsk binary
+*.EMS binary
+*.bin binary
+*.zip binary

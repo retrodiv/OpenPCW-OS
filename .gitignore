@@ -1,0 +1,18 @@
+__pycache__/
+.local/
+/docs/decisions/
+*.py[cod]
+.build/
+*.sym
+*.lst
+*.tmp
+
+# Release artifacts are intentionally versioned for direct use and audit.
+/dist/*
+!dist/OpenPCW-OS.dsk
+!dist/OPENPCW.EMS
+!dist/OpenPCW-OS-font.bin
+!dist/OpenPCW-OS-integration.json
+!dist/LICENSES.txt
+!dist/OpenPCW-OS.zip
+!dist/SHA256SUMS
