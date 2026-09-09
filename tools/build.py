@@ -639,13 +639,23 @@ def outputs(output_dir: Path, temp: Path) -> dict[Path, bytes]:
     interrupt_stack_top = symbol_value(kernel_symbols, "interrupt_stack_top")
     shell_stack_bottom = symbol_value(kernel_symbols, "shell_stack_bottom")
     shell_stack_top = symbol_value(kernel_symbols, "shell_stack_top")
+    command_buffer = symbol_value(kernel_symbols, "command_buffer")
+    command_buffer_end = symbol_value(kernel_symbols, "command_buffer_end")
+    command_scratch = symbol_value(native_symbols, "OPENPCW_COMMON_COMMAND_BUFFER")
+    if not command_buffer + 2 <= command_scratch <= command_buffer_end - 36:
+        raise SystemExit("native DIR scratch FCB is outside the disposable command buffer")
+    screen_stack_bottom = symbol_value(kernel_symbols, "userf_screen_stack_bottom")
+    screen_stack_top = symbol_value(kernel_symbols, "userf_screen_stack_top")
     if (interrupt_stack_top - interrupt_stack_bottom != 64 or
-            shell_stack_top - shell_stack_bottom != 32 or
-            interrupt_stack_top > shell_stack_bottom or
-            interrupt_stack_top > 0xF3BE):
+            interrupt_stack_bottom < PUBLIC_BDOS_ENTRY or
+            interrupt_stack_top > screen_stack_bottom or
+            screen_stack_top - screen_stack_bottom < 34 or
+            command_buffer < 0xF401 or
+            command_buffer_end > 0xF500 or
+            shell_stack_top - shell_stack_bottom != 32):
         raise SystemExit(
-            "resident interrupt/shell stacks no longer occupy safe distinct "
-            "64/32-byte ranges below the protected GENCOM loader boundary"
+            "resident stacks overlap application allocation, callback frames, "
+            "or the independent shell/command workspaces"
         )
     screen_restore = symbol_value(kernel_symbols, "native_restore_screen_mapping")
     if 0xF500 <= screen_restore < 0xF600:
@@ -671,6 +681,16 @@ def outputs(output_dir: Path, temp: Path) -> dict[Path, bytes]:
     warm_bdos = symbol_value(kernel_symbols, "warm_bdos_head")
     resident_shell = symbol_value(kernel_symbols, "resident_shell_entry")
     page_zero = symbol_value(kernel_symbols, "page_zero_template")
+    # Preserve the loader-visible allocation boundary while keeping the live
+    # IRQ stack above it. Reducing the boundary breaks PCW application loaders.
+    page_zero_bdos = page_zero - LOAD_ADDRESS + 5
+    if (payload[page_zero_bdos:page_zero_bdos + 3] !=
+            b"\xC3" + struct.pack("<H", PUBLIC_BDOS_ENTRY)):
+        raise SystemExit("plain Page Zero BDOS vector changed its allocation boundary")
+    warm_default = warm_bdos - LOAD_ADDRESS + 4
+    if (payload[warm_default:warm_default + 4] !=
+            b"\x21" + struct.pack("<H", PUBLIC_BDOS_ENTRY) + b"\xC8"):
+        raise SystemExit("ordinary WBOOT changed the plain allocation boundary")
     page_zero_interrupt = page_zero - LOAD_ADDRESS + 0x38
     expected_screen_vector = b"\xC3" + struct.pack(
         "<H", SCREEN_INTERRUPT_ENTRY

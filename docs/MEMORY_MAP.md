@@ -12,7 +12,7 @@ follow `REF-PCW-IO` and `REF-PCW-SOFTWARE-IO`.
 | C000–EFFF | Attached GENCOM module | resident-system extension while that program is active | every live OS continuation is outside the range |
 | F200–F2FF | Cold-start source | initial kernel material retained independently above the module ceiling | lifecycle and symbol audit |
 | F300–F31A | GENCOM loader prefix | conventional 27-byte resident-loader interface | exact address audit |
-| F31B–F400 | Cold/lifecycle workspace | copied resident shell, interrupt stack, shell stack, and Page Zero source | stack and overlap assertions |
+| F31B–F400 | Cold/lifecycle workspace | copied resident shell, native-service stack, shell stack, and Page Zero source | stack and overlap assertions |
 | F401–F5BD | High-loader margin | common-memory staging and reserved compatibility workspace | fixed-symbol and zero-fill audit |
 | F5BE–F5DD | GENCOM loader FCB workspace | application-owned activated FCB immediately below the entry stack | loader-boundary validation |
 | F5DE–F5FD | GENCOM entry stack | sixteen return words for an attached-module transient | stack and public-entry assertions |
@@ -22,15 +22,24 @@ follow `REF-PCW-IO` and `REF-PCW-SOFTWARE-IO`.
 
 | Region | Runtime owner | Lifetime and invariant |
 |---|---|---|
-| F37E–F3BD | private interrupt stack | 64 bytes; reuses consumed cold-start source and remains disjoint from shell and loader workspaces |
+| F401–F442 | shell command buffer | 66 bytes in the high-loader workspace while the CCP owns the machine; abandoned on program entry and reinitialized before each command |
+| F793–F7D2 | private interrupt stack | 64 bytes; above the F606h public allocation boundary |
+| F7D3–F7F4 | SCR RUN callback stack | callback return word plus sixteen call levels; disjoint from interrupt frames |
 | F3C9–F3E8 | resident shell stack | used only before launching a transient or after WBOOT has abandoned it |
 | F5BE–F5DD | GENCOM loader FCB workspace | application-owned while a GENCOM transient runs |
 | F5DE–F5FD | GENCOM entry stack | sixteen return words below the F606h loader anchor |
 
-The builder checks the interrupt and shell stack lengths and requires the
-interrupt top to remain at or below F3BEh. `VAL-GENCOM-LOADER-BOUNDARY` adds an
-executable interrupt/Open/BDOS-59 observation at the independent F5BEh loader
-boundary.
+Page Zero publishes the F606h BDOS entry for ordinary PCW loaders and the
+GENCOM chain. Reducing that boundary to F206h rejects programs which require
+F300h or higher. The interrupt frame therefore lives above F606h, keeping
+application buffers below that boundary intact while hardware ticks run.
+
+The builder checks the 64-byte IRQ frame, 34-byte callback stack, 32-byte
+shell stack and command-buffer lifetimes for overlap. The transient-stack
+probe writes the former F390h-F3BDh IRQ range, waits for real interrupts, calls
+BDOS and checks that every application byte survives. It also checks the
+loader-visible memory boundary. `VAL-GENCOM-LOADER-BOUNDARY` exercises the
+independent F5BEh loader boundary through interrupt/Open/BDOS-59 observations.
 
 ## Native physical-page regions
 

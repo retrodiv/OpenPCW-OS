@@ -50,9 +50,11 @@ start:
         set     3,b
 .page_zero_bdos_target:
         ld      hl,(0006h)
-        ld      a,h
-        or      l
-        jr      z,.page_zero_result
+        ; Preserve the PCW loader allocation boundary across WBOOT.
+        ld      de,0f606h
+        or      a
+        sbc     hl,de
+        jr      nz,.page_zero_result
         set     4,b
 .page_zero_result:
         ld      a,b

@@ -58,7 +58,7 @@ OPENPCW_COMMON_LOGIN_VECTOR equ 0ffd3h
 OPENPCW_COMMON_RO_VECTOR    equ 0ffd5h
 OPENPCW_COMMON_CLOCK_TICKS  equ 0fffch
 OPENPCW_COMMON_RESTORE_PAGE equ 0fe31h
-OPENPCW_COMMON_COMMAND_BUFFER equ 0f7a6h
+OPENPCW_COMMON_COMMAND_BUFFER equ 0f414h
 ; SELMEM owns this persistent bank-selection byte. RESTORE_PAGE instead
 ; describes the page in which an interrupted instruction must resume and is
 ; deliberately changed to the private system page while a native service runs.

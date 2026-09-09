@@ -6,7 +6,7 @@ kernel, terminal, disk services, keyboard services, interrupt ticker, shell,
 and application API run on the PCW hardware model implemented by emulators such
 as MAME and JOYCE and are designed for the corresponding physical machines.
 
-Version 0.1.0 provides:
+Version 0.2.0 provides:
 
 - a 180 KiB bootable PCW disk image;
 - a resident command shell with physical A: disk replacement;

@@ -5,6 +5,7 @@
 ; words while opening and reading its own COM file, then publishes a marker.
 ; This exercises a deeper call frame than the resident BDOS front end and
 ; proves that application stack traffic cannot modify resident instructions.
+; A buffer in the old F390h-F3BDh interrupt-stack range must also survive ticks.
 
         org     0100h
 
@@ -16,6 +17,22 @@ probe_start:
 .reserve_application_frames:
         push    hl
         djnz    .reserve_application_frames
+
+        ; PCW loaders accept the established high BDOS allocation boundary.
+        ld      hl,(0006h)
+        ld      de,0f300h
+        or      a
+        sbc     hl,de
+        jp      c,.publish_failure
+        ld      hl,0f390h
+        ld      de,0f391h
+        ld      bc,45
+        ld      (hl),0a5h
+        ldir
+        ld      b,8
+.wait_for_interrupts:
+        halt
+        djnz    .wait_for_interrupts
 
         ld      de,self_fcb
         ld      c,15
@@ -35,6 +52,14 @@ probe_start:
         ld      a,(read_buffer)
         cp      0c3h              ; COM begins with JP probe_start
         jr      nz,.publish_failure
+        ld      hl,0f390h
+        ld      b,46
+.check_application_buffer:
+        ld      a,(hl)
+        cp      0a5h
+        jr      nz,.publish_failure
+        inc     hl
+        djnz    .check_application_buffer
         xor     a
         jr      .publish_result
 .publish_failure:

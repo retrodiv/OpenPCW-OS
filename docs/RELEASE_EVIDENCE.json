@@ -28,12 +28,12 @@
   "input_sha256": {
     "LICENSE": "abcc2ae7a88af6b2b4d3772d0a32dc379b2f1c569d62219b9a0ae10ff83c7c3b",
     "dist/LICENSES.txt": "d08374b685c430ff58b45221f766754bcab5058d4a1ad52732027db2c6c8ed9a",
-    "dist/OPENPCW.EMS": "39e47e92e2b9153bc8bb99afc34c1951e8744cd965f389ecec3c931fa9748c8a",
+    "dist/OPENPCW.EMS": "e866821cc0d73b3669082d5ff7f5d113d2cadb609b340f2f96a0bba61336bf1a",
     "dist/OpenPCW-OS-font.bin": "f2327dfe38fcf76829086457298e6f8fc7bf569ec80db87412ed77c6526b272b",
-    "dist/OpenPCW-OS-integration.json": "7f69725ebfc58d558def4d29d15b25a4c07561d909c713a30695e491dd27bffe",
-    "dist/OpenPCW-OS.dsk": "1b4e8ff0423989349075332b7fd7020c26c2bbd83743ca058f1de559423fa15a",
-    "dist/OpenPCW-OS.zip": "12d3f6b70a9b48572beeed346ccf5cbebe786facd07be48f6e890a4aa98aa235",
-    "dist/SHA256SUMS": "88f4909212700377068238d3f6d9fbc2ffef5a7876bab9ce6aecbfb5c5c25b3c",
+    "dist/OpenPCW-OS-integration.json": "a85faa5a2791ee72edf9dcf260e31b168aae66de562bf9854309ec51c722db76",
+    "dist/OpenPCW-OS.dsk": "7057b1f9679f4f6ea153ded0e5254e20b355b4f8c97e4fdf89c6f34f33831001",
+    "dist/OpenPCW-OS.zip": "65a545d8cbfe5d282302e2b326755fb2ce75128837987c8665b777e7b74c9cd3",
+    "dist/SHA256SUMS": "29a76dda77c54243c202ad280193d1c745b0aa7f583d8a3d2ecccc64dcf732f4",
     "tests/test_artifact_contracts.py": "5acb1edd31a2fcd90b9d63c01dd5e1a069951b5515c85558f604fe25227fa5a2",
     "third_party/microsoft-msdos/437-8X8.ASM": "9ba690ac66ea37c6afb257a7416fef29a5cf8184936150526de0ad081739f5d7",
     "third_party/microsoft-msdos/LICENSE": "b5179f780ec212a434efcc989a2295a140deb0bdb17182d2bf9c5f6f1f1a01c4"

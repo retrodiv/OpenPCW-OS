@@ -19,13 +19,15 @@ builder rejects either a gap or an overlap. BDOS 59 publishes its active page
 to the shared restore trampoline while nested sparse-record helpers execute,
 then restores the ordinary native page before returning its result.
 
-The resident interrupt frame uses a 64-byte common stack ending at F3BEh. Its
-backing bytes are the already-consumed Page Zero source and cold-only banner
-prefix, so the runtime frame remains protected without taking space from an
-application. The shell owns a separate lifecycle stack. GENCOM transients use
-the independent F5BEh loader-FCB boundary and F5DEh-F5FDh entry stack below the
-F606h anchor; `VAL-GENCOM-LOADER-BOUNDARY` exercises that exact boundary through
-interrupts, Open, and BDOS 59.
+The resident interrupt frame uses a 64-byte common stack at F793h-F7D2h,
+above the F606h allocation boundary exposed to PCW applications. A separate
+34-byte SCR RUN stack follows it. The shell's command buffer uses the
+F401h-F442h loader workspace only while the CCP runs; it is abandoned on
+program entry and reinitialized before each subsequent command. The shell
+also owns a separate lifecycle stack. GENCOM retains its independent F5BEh
+loader-FCB boundary and F5DEh-F5FDh entry stack below F606h;
+`VAL-GENCOM-LOADER-BOUNDARY` exercises that boundary through interrupts, Open,
+and BDOS 59.
 
 An attached GENCOM module may own C000h–EFFFh. The builder consequently rejects
 every post-activation resident-shell, WBOOT-head, or Screen/BIOS interrupt entry

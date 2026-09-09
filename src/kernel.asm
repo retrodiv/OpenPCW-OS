@@ -27,11 +27,10 @@ gencom_transient_stack_top equ 0f5feh
 kernel_entry:
         jp      kernel_cold_start
 
-; Keep the ordinary Page Zero BDOS entry at the established PCW-compatible
-; F206h address. A separate high resident-chain veneer at F606h lets GENCOM
-; modules remain below the conventional F000h allocation ceiling; both
-; veneers reach the same private dispatcher at F609h.  Plain transients keep
-; their independent initial stack at F600h, outside their advertised TPA.
+; Retain the low F206h compatibility veneer. Page Zero publishes the high
+; F606h entry used by PCW loaders and GENCOM; both reach the private
+; dispatcher at F609h. The private interrupt stack lives above this boundary,
+; so application buffers below it cannot be overwritten by interrupt frames.
         defs    0f206h-$,0
 bdos_low_entry:
         jp      bdos_entry
@@ -142,6 +141,9 @@ warm_boot_impl:
         jp      warm_boot_prepare
 
 command_loop:
+        ; Reclaim the completed cold-start/command workspace after each COM.
+        ld      a,63
+        ld      (command_buffer),a
         ld      de,command_buffer
         ld      c,10
         ; Enter through a low-page proxy, just as a conventional CCP does.
@@ -166,7 +168,7 @@ command_loop:
         jp      warm_boot_prepare
         ; Preserve the native execution bridge addresses published to the
         ; separately assembled service page.
-        defs    14,0
+        defs    9,0
 .native_unavailable:
         call    native_execute_call
 .native_execute_result:
@@ -188,6 +190,8 @@ resident_shell_execute_result equ OPENPCW_RESIDENT_SHELL_ENTRY+(.native_execute_
 
 ; Conventional CP/M page-zero vectors copied to 0000h. Bytes 3 and 4 are the
 ; IOBYTE and current drive. Programs call 0005h with C=function and DE=arg.
+; Plain programs also derive their TPA ceiling from the target at 0006h.
+; The private interrupt stack must remain above that public boundary.
 page_zero_template:
         jp      0fc03h
         db      0
@@ -213,25 +217,20 @@ page_zero_template:
         defs    066h-($-page_zero_template),0
         retn
 
-; Once cold initialisation has copied this Page Zero template into the two
-; public low banks and printed the banner, its source bytes are no longer
-; read: WBOOT rebuilds only the executable islands and deliberately preserves
-; the live DMA. The private interrupt stack therefore reuses the final eleven
-; template bytes and the first 53 cold-only banner bytes. Its top is exactly
-; below the lifecycle-owned shell workspace, and far below the independent
-; GENCOM loader workspace in the high-loader margin.
+; The command buffer uses the high-loader workspace only while the CCP
+; runs. It is abandoned before entering a transient and reinitialized on
+; return. Interrupts use a separate persistent stack above the BDOS boundary.
         defs    080h-($-page_zero_template),0
-interrupt_stack_bottom equ 0f37eh
+command_buffer equ 0f401h
+command_buffer_end equ command_buffer+66
 resident_boot_banner_prefix:
         ; Cold native initialisation prints this before interrupts are enabled.
-        ; Afterwards the same fixed 64-byte range becomes the private IRQ stack.
+        ; The native-service stack may reuse this cold-only source later.
         db      12,13,10
         db      'OpenPCW-OS  (MIT-licensed)',13,10,13,10
-        db      'v 0.1, 61K TPA, 1 disc dr',0
-        ; Keep the published interrupt-stack boundary independent of the
-        ; human-readable project name stored at the start of this range.
+        db      'v 0.2, 61K TPA, 1 disc dr',0
+        ; Preserve the following fixed cold-source and shell-stack addresses.
         defs    5,0
-interrupt_stack_top equ 0f3beh
 
 ; The resident shell blocks inside console calls with interrupts enabled.
 ; Giving it a separate stack prevents an interrupt's private register frame
@@ -549,9 +548,13 @@ newline:
         db      13,10,0
 not_found:
         db      'No such command',13,10,0
-command_buffer:
-        db      63,0
+; Keep the IRQ frame wholly above the public F606h allocation boundary.
+; The remaining 34 bytes provide the SCR RUN callback's separate stack:
+; one callback return word plus sixteen levels of application calls.
+interrupt_stack_bottom:
         defs    64,0
+interrupt_stack_top:
+userf_screen_stack_bottom:
         ; Native page-one services publish this state through fixed common
         ; addresses. Preserve the established F7F5h boundary even when the
         ; resident line-editor trampoline changes size.
@@ -824,9 +827,8 @@ bios_userf:
         ; SCR RUN executes a common-memory callback with the three PCW screen
         ; blocks visible at 0000h-BFFFh.  Keep the caller's stack and register
         ; file intact while switching to an OS-owned common-memory stack. The
-        ; completed command line is no longer live while a transient runs, so
-        ; its buffer is a distinct lifecycle-owned callback stack and cannot
-        ; overlap either the interrupt or GENCOM entry stack.
+        ; callback has a separate 16-level stack above the private interrupt
+        ; frame; neither stack overlaps the GENCOM entry stack.
         ld      a,b
         cp      0c0h
         jr      c,.userf_unknown

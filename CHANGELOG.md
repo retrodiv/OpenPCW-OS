@@ -6,6 +6,22 @@ All notable project changes are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-09
+
+### Fixed
+
+- Interrupt register frames now occupy protected common memory above the
+  public BDOS allocation boundary. Application buffers around F3A4h survive
+  timer interrupts, fixing corrupt or missing text in Ballyhoo and other
+  Infocom interpreters.
+- The F606h Page Zero and GENCOM boundary remains unchanged, preserving
+  loaders such as Complete Home Entertainment Centre that require at least
+  F300h. The shell command buffer and SCR RUN callback stack remain separate
+  from the interrupt frame.
+- Build gates and executable buffer/stack/WBOOT probes guard those boundaries.
+
+### Changed
+
 - Deterministic binary release ZIP with complete MIT notices and checksums.
 - Source manifests that preserve file identity across Windows and Linux
   checkouts, with verification that leaves published files unchanged.
